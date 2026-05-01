@@ -6,7 +6,7 @@ return {
     -- [[ VIP PERMANENT ]]
     [10698705846] = math.huge,
     [9593359594] = math.huge,
-    [10485997905] = math.huge,
+    [10486072042] = math.huge,
     [10365005803] = math.huge,
     [9352630223] = math.huge,
 
