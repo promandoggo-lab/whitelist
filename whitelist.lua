@@ -1,21 +1,23 @@
--- [[ LOUIS HUB V13 DATABASE ]]
--- FORMAT PENULISAN -> ID:TIMESTAMP
--- Gunakan https://www.unixtimestamp.com/ untuk menentukan waktu expired
+local function date(d, m, y)
+    return os.time({day=d, month=m, year=y, hour=0, min=0, sec=0})
+end
 
--- VIP PERMANENT
-10698705846:9999999999
-9593359594:9999999999
-10486072042:9999999999
-10365005803:9999999999
-9352630223:9999999999
-8278252628:9999999999
+return {
+    -- [[ VIP PERMANENT ]]
+    [10698705846] = math.huge,
+    [9593359594] = math.huge,
+    [10486072042] = math.huge,
+    [10365005803] = math.huge,
+    [9352630223] = math.huge,
+    [8278252628] = math.huge,
 
--- VIP 1 BULAN (Expired: 1 Juni 2026)
-9056010980:1748730000
-9268364063:1748730000
-8153683757:1748730000
-8230713737:1748730000
-10646320247:1748730000
-341506349:1748730000
-7899843409:1748730000
-1001297277:1748730000
+    -- [[ VIP 1 BULAN ]]
+    -- Format: [ID] = date(Tanggal, Bulan, Tahun)
+    [9056010980] = date(1, 6, 2026), 
+    [9268364063] = date(1, 6, 2026), 
+    [8153683757] = date(1, 6, 2026), 
+    [8230713737] = date(1, 6, 2026), 
+    [10646320247] = date(1, 6, 2026), 
+    [341506349] = date(1, 6, 2026), 
+    [7899843409] = date(1, 6, 2026), 
+}
