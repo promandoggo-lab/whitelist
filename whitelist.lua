@@ -11,7 +11,7 @@ return {
     [8278252628] = math.huge,
     [4045325529] = math.huge,
     [8698142467] = math.huge,
-    [4714503828] = math.huge,
+    [10494185985] = math.huge,
 
     -- [[ VIP 1 BULAN ]]
     -- Format: [ID] = date(Tanggal, Bulan, Tahun)
