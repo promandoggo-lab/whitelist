@@ -9,6 +9,7 @@ return {
     [8274108424] = math.huge,
     [7376659191] = math.huge,
     [8277608643] = math.huge,
+    [8270789374] = math.huge,
 
     -- [[ VIP PERMANENT ]]
     [9593359594] = math.huge,
