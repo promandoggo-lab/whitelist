@@ -788,6 +788,42 @@ return function(AccessKey)
         return p.Character:FindFirstChild("Bomb") or (p:FindFirstChild("Backpack") and p.Backpack:FindFirstChild("Bomb")) 
     end
 
+    -- DETEKSI SISA DETIK TIMER BOM
+    local function getBombTime()
+        local char = LocalPlayer.Character
+        if not char then return nil end
+        
+        -- Cari BillboardGui/TextLabel di dalam karakter (Head, Tool, dll.)
+        for _, obj in ipairs(char:GetDescendants()) do
+            if obj:IsA("TextLabel") then
+                local cleanTxt = obj.Text:match("[%d%.]+")
+                if cleanTxt then
+                    local num = tonumber(cleanTxt)
+                    if num and num > 0 and num <= 30 then
+                        return num
+                    end
+                end
+            end
+        end
+        
+        -- Cari di PlayerGui (jika ada HUD sisa waktu di layar)
+        local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+        if playerGui then
+            for _, obj in ipairs(playerGui:GetDescendants()) do
+                if obj:IsA("TextLabel") and obj.Visible then
+                    local cleanTxt = obj.Text:match("^%d+%.?%d*$")
+                    if cleanTxt then
+                        local num = tonumber(cleanTxt)
+                        if num and num > 0 and num <= 30 then
+                            return num
+                        end
+                    end
+                end
+            end
+        end
+        return nil
+    end
+
     local function isAlive(p) 
         return p and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 and p.Character:FindFirstChild("HumanoidRootPart") 
     end
@@ -891,11 +927,19 @@ return function(AccessKey)
             Camera.CFrame *= CFrame.Angles(math.rad(math.random(-25, 25)), math.rad(math.random(-45, 45)), 0)
         end
 
-        -- LOGIKA ROTASI DAN AUTO HOLD BOMB (Membelakangi Musuh Jika Memegang Bom)
+        -- LOGIKA ROTASI DAN AUTO HOLD BOMB (Membelakangi Musuh Jika Memegang Bom, Menghadap Jika sisa 1 Detik)
         if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter and isAlive(lockedTarget) then
             if _G.AutoHoldActive and amIHolder then
                 hum.AutoRotate = false
-                local lookDir = root.Position + (root.Position - lockedTarget.Character.HumanoidRootPart.Position).Unit
+                local remaining = getBombTime()
+                local lookDir
+                if remaining and remaining <= 1.05 then
+                    -- Menghadap langsung ke arah musuh (Timer <= 1 detik)
+                    lookDir = Vector3.new(lockedTarget.Character.HumanoidRootPart.Position.X, root.Position.Y, lockedTarget.Character.HumanoidRootPart.Position.Z)
+                else
+                    -- Membelakangi musuh
+                    lookDir = root.Position + (root.Position - lockedTarget.Character.HumanoidRootPart.Position).Unit
+                end
                 root.CFrame = root.CFrame:Lerp(CFrame.new(root.Position, lookDir), 0.3)
             elseif _G.FaceClassic or _G.FacePro then
                 hum.AutoRotate = false
@@ -907,7 +951,15 @@ return function(AccessKey)
         else
             if _G.AutoHoldActive and amIHolder and isAlive(lockedTarget) then
                 hum.AutoRotate = false
-                local lookDir = root.Position + (root.Position - lockedTarget.Character.HumanoidRootPart.Position).Unit
+                local remaining = getBombTime()
+                local lookDir
+                if remaining and remaining <= 1.05 then
+                    -- Menghadap langsung ke arah musuh (Timer <= 1 detik)
+                    lookDir = Vector3.new(lockedTarget.Character.HumanoidRootPart.Position.X, root.Position.Y, lockedTarget.Character.HumanoidRootPart.Position.Z)
+                else
+                    -- Membelakangi musuh
+                    lookDir = root.Position + (root.Position - lockedTarget.Character.HumanoidRootPart.Position).Unit
+                end
                 root.CFrame = root.CFrame:Lerp(CFrame.new(root.Position, lookDir), 0.3)
             else
                 hum.AutoRotate = true
@@ -1322,5 +1374,5 @@ return function(AccessKey)
     UserInputService.InputChanged:Connect(function(i) if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then local d = i.Position - dragStart; MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y) end end)
     UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
 
-    print("Louis Hub VIP V13.5.2: Initialized Successfully with Auto Hold Bomb.")
+    print("Louis Hub VIP V13.5.2: Initialized Successfully with Auto Hold & Smart Face Timer.")
 end
