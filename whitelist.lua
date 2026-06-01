@@ -20,7 +20,7 @@ return {
     [8698142467] = math.huge,
     [10494185985] = math.huge,
     [10832254242] = math.huge,
-    [3189967384] = math.huge,
+    [10512592607] = math.huge,
     [1375771009] = math.huge,
 
     -- [[ VIP 1 BULAN ]]
