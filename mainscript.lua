@@ -1,6 +1,6 @@
 -- [[ LOUIS HUB VIP - PROTECTED EDITION ]]
 -- AUTH: Louis | LAYERS: 1-4 (Handshake, Whitelist, Key, Anti-Tamper)
--- VERSION: 13.5.2 (Security Sync Update)
+-- VERSION: 13.5.2 (Security Sync Update with Custom Flick & Multi-Jump)
 
 return function(AccessKey)
     -- [[ PROTEKSI 4: ANTI-TAMPER ]]
@@ -345,6 +345,8 @@ return function(AccessKey)
     _G.FaceClassic = false 
     _G.FacePro = false 
     _G.FlickEnabled = false 
+    _G.FlickActive = false
+    _G.FlickStrength = 45
     _G.AutoJumpEnabled = false
     _G.WallHopDist = 2.5 
     _G.WHNormal = true 
@@ -357,6 +359,8 @@ return function(AccessKey)
     
     -- INFINITE JUMP STATE
     _G.InfJumpEnabled = false
+    _G.MaxJumpCount = 5
+    _G.CurrentJumpCount = 0
 
     -- AUTO HOLD BOMB STATE
     _G.AutoHoldEnabled = false
@@ -599,61 +603,145 @@ return function(AccessKey)
     ContentFrame.BackgroundTransparency = 1
     ContentFrame.Visible = false
     ContentFrame.ScrollBarThickness = 0
-    ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 410)
+    ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 480)
     
     local ModeBtn = createBtn("[E] MODE: CLASS", UDim2.new(0, 6, 0, 0), UDim2.new(0, 128, 0, 20)); ModeBtn.Parent = ContentFrame
     local FlickBtn = createBtn("[Z] FLICK: OFF", UDim2.new(0, 6, 0, 25), UDim2.new(0, 62, 0, 20)); FlickBtn.Parent = ContentFrame
     local HJBtn = createBtn("[X] HJ: OFF", UDim2.new(0, 72, 0, 25), UDim2.new(0, 62, 0, 20)); HJBtn.Parent = ContentFrame
     local AutoJumpBtn = createBtn("[C] AUTO JUMP: OFF", UDim2.new(0, 6, 0, 50), UDim2.new(0, 128, 0, 20)); AutoJumpBtn.Parent = ContentFrame
 
-    -- TOMBOL INFINITE JUMP & AUTO HOLD BOMB (Dibuat berdampingan secara presisi)
+    -- TOMBOL MULTI JUMP & AUTO HOLD BOMB
     local InfJumpBtn = createBtn("[K] INF JUMP: OFF", UDim2.new(0, 6, 0, 75), UDim2.new(0, 62, 0, 20)); InfJumpBtn.Parent = ContentFrame
     local AutoHoldBtn = createBtn("[J] AUTO HOLD: OFF", UDim2.new(0, 72, 0, 75), UDim2.new(0, 62, 0, 20)); AutoHoldBtn.Parent = ContentFrame
     
-    local InfJumpWarning = createLabel("WARNING: This feature has a risk of getting banned if you use this feature too often", UDim2.new(0, 6, 0, 97), UDim2.new(0, 128, 0, 20))
+    -- SLIDER JUMP LIMIT (2-10)
+    createLabel("MAX JUMPS (2-10)", UDim2.new(0, 6, 0, 100)).Parent = ContentFrame
+    local JumpSliderFrame = Instance.new("Frame", ContentFrame)
+    JumpSliderFrame.Size = UDim2.new(0, 128, 0, 12)
+    JumpSliderFrame.Position = UDim2.new(0, 6, 0, 112)
+    JumpSliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    Instance.new("UICorner", JumpSliderFrame)
+    
+    local JumpSliderFill = Instance.new("Frame", JumpSliderFrame)
+    JumpSliderFill.BackgroundColor3 = _G.AccentColor
+    Instance.new("UICorner", JumpSliderFill)
+    
+    local JumpSliderText = Instance.new("TextLabel", JumpSliderFrame)
+    JumpSliderText.Size = UDim2.new(1, 0, 1, 0)
+    JumpSliderText.BackgroundTransparency = 1
+    JumpSliderText.TextColor3 = Color3.new(1, 1, 1)
+    JumpSliderText.TextSize = 7
+    JumpSliderText.Font = Enum.Font.GothamBold
+
+    local function syncJumpSlider(val)
+        JumpSliderFill.Size = UDim2.new(math.clamp((val - 2) / 8, 0, 1), 0, 1, 0)
+        JumpSliderText.Text = string.format("%d JUMPS", val)
+    end
+    syncJumpSlider(_G.MaxJumpCount)
+
+    JumpSliderFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            local moveConn; moveConn = UserInputService.InputChanged:Connect(function(move)
+                if move.UserInputType == Enum.UserInputType.MouseMovement or move.UserInputType == Enum.UserInputType.Touch then
+                    local pos = math.clamp((move.Position.X - JumpSliderFrame.AbsolutePosition.X) / JumpSliderFrame.AbsoluteSize.X, 0, 1)
+                    _G.MaxJumpCount = math.floor(2 + (pos * 8))
+                    syncJumpSlider(_G.MaxJumpCount)
+                end
+            end)
+            UserInputService.InputEnded:Connect(function(ended)
+                if ended.UserInputType == Enum.UserInputType.MouseButton1 or ended.UserInputType == Enum.UserInputType.Touch then
+                    moveConn:Disconnect()
+                end
+            end)
+        end
+    end)
+
+    local InfJumpWarning = createLabel("WARNING: This feature has a risk of getting banned if you use this feature too often", UDim2.new(0, 6, 0, 127), UDim2.new(0, 128, 0, 20))
     InfJumpWarning.TextColor3 = Color3.fromRGB(255, 75, 75)
     InfJumpWarning.TextWrapped = true
     InfJumpWarning.TextSize = 5.5
     InfJumpWarning.Parent = ContentFrame
 
-    createLine(UDim2.new(0, 6, 0, 120)).Parent = ContentFrame 
-    createLabel("FACES MODE", UDim2.new(0, 6, 0, 126)).Parent = ContentFrame
-    local ClassicBtn = createBtn("[G] CLASSIC: OFF", UDim2.new(0, 6, 0, 138), UDim2.new(0, 62, 0, 20)); ClassicBtn.Parent = ContentFrame
-    local ProBtn = createBtn("[H] PRO: OFF", UDim2.new(0, 72, 0, 138), UDim2.new(0, 62, 0, 20)); ProBtn.Parent = ContentFrame
+    createLine(UDim2.new(0, 6, 0, 150)).Parent = ContentFrame 
+    createLabel("FACES MODE", UDim2.new(0, 6, 0, 156)).Parent = ContentFrame
+    local ClassicBtn = createBtn("[G] CLASSIC: OFF", UDim2.new(0, 6, 0, 168), UDim2.new(0, 62, 0, 20)); ClassicBtn.Parent = ContentFrame
+    local ProBtn = createBtn("[H] PRO: OFF", UDim2.new(0, 72, 0, 168), UDim2.new(0, 62, 0, 20)); ProBtn.Parent = ContentFrame
 
-    createLine(UDim2.new(0, 6, 0, 164)).Parent = ContentFrame
-    createLabel("WALLHOP MODE", UDim2.new(0, 6, 0, 170)).Parent = ContentFrame
-    local WHNormalBtn = createBtn("NORMAL", UDim2.new(0, 6, 0, 182), UDim2.new(0, 62, 0, 20), _G.WHNormal and _G.AccentColor or nil); WHNormalBtn.Parent = ContentFrame
-    local WHInstantBtn = createBtn("INSTANT", UDim2.new(0, 72, 0, 182), UDim2.new(0, 62, 0, 20)); WHInstantBtn.Parent = ContentFrame
+    createLine(UDim2.new(0, 6, 0, 194)).Parent = ContentFrame
+    createLabel("WALLHOP MODE", UDim2.new(0, 6, 0, 200)).Parent = ContentFrame
+    local WHNormalBtn = createBtn("NORMAL", UDim2.new(0, 6, 0, 212), UDim2.new(0, 62, 0, 20), _G.WHNormal and _G.AccentColor or nil); WHNormalBtn.Parent = ContentFrame
+    local WHInstantBtn = createBtn("INSTANT", UDim2.new(0, 72, 0, 212), UDim2.new(0, 62, 0, 20)); WHInstantBtn.Parent = ContentFrame
 
-    createLabel("WALLHOP DISTANCE", UDim2.new(0, 6, 0, 207)).Parent = ContentFrame
-    local SliderFrame = Instance.new("Frame", ContentFrame); SliderFrame.Size = UDim2.new(0, 128, 0, 12); SliderFrame.Position = UDim2.new(0, 6, 0, 219); SliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30); Instance.new("UICorner", SliderFrame)
+    createLabel("WALLHOP DISTANCE", UDim2.new(0, 6, 0, 237)).Parent = ContentFrame
+    local SliderFrame = Instance.new("Frame", ContentFrame); SliderFrame.Size = UDim2.new(0, 128, 0, 12); SliderFrame.Position = UDim2.new(0, 6, 0, 249); SliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30); Instance.new("UICorner", SliderFrame)
     local SliderFill = Instance.new("Frame", SliderFrame); SliderFill.BackgroundColor3 = _G.AccentColor; Instance.new("UICorner", SliderFill)
     local SliderText = Instance.new("TextLabel", SliderFrame); SliderText.Size = UDim2.new(1, 0, 1, 0); SliderText.BackgroundTransparency = 1; SliderText.TextColor3 = Color3.new(1, 1, 1); SliderText.TextSize = 7; SliderText.Font = Enum.Font.GothamBold
 
-    -- CAMERA SETTINGS
-    createLine(UDim2.new(0, 6, 0, 236)).Parent = ContentFrame
-    createLabel("CAMERA SETTINGS", UDim2.new(0, 6, 0, 242)).Parent = ContentFrame
+    -- FLICK STRENGTH SLIDER (5-90)
+    createLabel("FLICK STRENGTH (5-90)", UDim2.new(0, 6, 0, 266)).Parent = ContentFrame
+    local FlickSliderFrame = Instance.new("Frame", ContentFrame)
+    FlickSliderFrame.Size = UDim2.new(0, 128, 0, 12)
+    FlickSliderFrame.Position = UDim2.new(0, 6, 0, 278)
+    FlickSliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    Instance.new("UICorner", FlickSliderFrame)
     
-    local FOVBtn = createBtn("[I] FOV: OFF", UDim2.new(0, 6, 0, 254), UDim2.new(0, 128, 0, 20)); FOVBtn.Parent = ContentFrame
+    local FlickSliderFill = Instance.new("Frame", FlickSliderFrame)
+    FlickSliderFill.BackgroundColor3 = _G.AccentColor
+    Instance.new("UICorner", FlickSliderFill)
+    
+    local FlickSliderText = Instance.new("TextLabel", FlickSliderFrame)
+    FlickSliderText.Size = UDim2.new(1, 0, 1, 0)
+    FlickSliderText.BackgroundTransparency = 1
+    FlickSliderText.TextColor3 = Color3.new(1, 1, 1)
+    FlickSliderText.TextSize = 7
+    FlickSliderText.Font = Enum.Font.GothamBold
 
-    local FOVSliderFrame = Instance.new("Frame", ContentFrame); FOVSliderFrame.Size = UDim2.new(0, 128, 0, 12); FOVSliderFrame.Position = UDim2.new(0, 6, 0, 279); FOVSliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30); Instance.new("UICorner", FOVSliderFrame)
+    local function syncFlickSlider(val)
+        FlickSliderFill.Size = UDim2.new(math.clamp((val - 5) / 85, 0, 1), 0, 1, 0)
+        FlickSliderText.Text = string.format("%.0f DEGREES", val)
+    end
+    syncFlickSlider(_G.FlickStrength)
+
+    FlickSliderFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            local moveConn; moveConn = UserInputService.InputChanged:Connect(function(move)
+                if move.UserInputType == Enum.UserInputType.MouseMovement or move.UserInputType == Enum.UserInputType.Touch then
+                    local pos = math.clamp((move.Position.X - FlickSliderFrame.AbsolutePosition.X) / FlickSliderFrame.AbsoluteSize.X, 0, 1)
+                    _G.FlickStrength = math.floor(5 + (pos * 85))
+                    syncFlickSlider(_G.FlickStrength)
+                end
+            end)
+            UserInputService.InputEnded:Connect(function(ended)
+                if ended.UserInputType == Enum.UserInputType.MouseButton1 or ended.UserInputType == Enum.UserInputType.Touch then
+                    moveConn:Disconnect()
+                end
+            end)
+        end
+    end)
+
+    -- CAMERA SETTINGS
+    createLine(UDim2.new(0, 6, 0, 295)).Parent = ContentFrame
+    createLabel("CAMERA SETTINGS", UDim2.new(0, 6, 0, 301)).Parent = ContentFrame
+    
+    local FOVBtn = createBtn("[I] FOV: OFF", UDim2.new(0, 6, 0, 313), UDim2.new(0, 128, 0, 20)); FOVBtn.Parent = ContentFrame
+
+    local FOVSliderFrame = Instance.new("Frame", ContentFrame); FOVSliderFrame.Size = UDim2.new(0, 128, 0, 12); FOVSliderFrame.Position = UDim2.new(0, 6, 0, 338); FOVSliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30); Instance.new("UICorner", FOVSliderFrame)
     local FOVSliderFill = Instance.new("Frame", FOVSliderFrame); FOVSliderFill.BackgroundColor3 = _G.AccentColor; Instance.new("UICorner", FOVSliderFill)
     local FOVSliderText = Instance.new("TextLabel", FOVSliderFrame); FOVSliderText.Size = UDim2.new(1, 0, 1, 0); FOVSliderText.BackgroundTransparency = 1; FOVSliderText.TextColor3 = Color3.new(1, 1, 1); FOVSliderText.TextSize = 7; FOVSliderText.Font = Enum.Font.GothamBold
 
     -- FREEZE / LAG SYSTEM
-    createLine(UDim2.new(0, 6, 0, 296)).Parent = ContentFrame
-    createLabel("FREEZE / LAG SIMULATOR", UDim2.new(0, 6, 0, 302)).Parent = ContentFrame
-    local FreezeBtn = createBtn("[O] FREEZE BUTTON: OFF", UDim2.new(0, 6, 0, 314), UDim2.new(0, 128, 0, 20)); FreezeBtn.Parent = ContentFrame
+    createLine(UDim2.new(0, 6, 0, 355)).Parent = ContentFrame
+    createLabel("FREEZE / LAG SIMULATOR", UDim2.new(0, 6, 0, 361)).Parent = ContentFrame
+    local FreezeBtn = createBtn("[O] FREEZE BUTTON: OFF", UDim2.new(0, 6, 0, 373), UDim2.new(0, 128, 0, 20)); FreezeBtn.Parent = ContentFrame
 
     -- SYSTEM SCALE SETTINGS
-    createLine(UDim2.new(0, 6, 0, 339)).Parent = ContentFrame
-    createLabel("SCALE SETTINGS", UDim2.new(0, 6, 0, 345)).Parent = ContentFrame
+    createLine(UDim2.new(0, 6, 0, 398)).Parent = ContentFrame
+    createLabel("SCALE SETTINGS", UDim2.new(0, 6, 0, 404)).Parent = ContentFrame
 
     -- SLIDER UKURAN UI (1-200%)
     local UIScaleSliderFrame = Instance.new("Frame", ContentFrame)
     UIScaleSliderFrame.Size = UDim2.new(0, 128, 0, 12)
-    UIScaleSliderFrame.Position = UDim2.new(0, 6, 0, 357)
+    UIScaleSliderFrame.Position = UDim2.new(0, 6, 0, 416)
     UIScaleSliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Instance.new("UICorner", UIScaleSliderFrame)
 
@@ -702,7 +790,7 @@ return function(AccessKey)
     -- SLIDER UKURAN TOMBOL EKSTERNAL (1-200%)
     local ExtScaleSliderFrame = Instance.new("Frame", ContentFrame)
     ExtScaleSliderFrame.Size = UDim2.new(0, 128, 0, 12)
-    ExtScaleSliderFrame.Position = UDim2.new(0, 6, 0, 374)
+    ExtScaleSliderFrame.Position = UDim2.new(0, 6, 0, 433)
     ExtScaleSliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Instance.new("UICorner", ExtScaleSliderFrame)
 
@@ -719,6 +807,7 @@ return function(AccessKey)
 
     local ExternalUIScale
     local AutoHoldUIScale
+    local FlickExternalUIScale
 
     local function syncExtScaleSlider(val)
         ExtScaleSliderFill.Size = UDim2.new(math.clamp((val - 1) / 199, 0, 1), 0, 1, 0)
@@ -728,6 +817,9 @@ return function(AccessKey)
         end
         if AutoHoldUIScale then
             AutoHoldUIScale.Scale = val / 100
+        end
+        if FlickExternalUIScale then
+            FlickExternalUIScale.Scale = val / 100
         end
     end
 
@@ -859,6 +951,11 @@ return function(AccessKey)
         local root = LocalPlayer.Character.HumanoidRootPart; local hum = LocalPlayer.Character.Humanoid
         local amIHolder = hasBomb(LocalPlayer)
         
+        -- Reset Jump count if grounded
+        if hum and hum.FloorMaterial ~= Enum.Material.Air then
+            _G.CurrentJumpCount = 0
+        end
+
         -- Sinkronisasi Kamera FOV Loop
         if _G.FOVEnabled then
             Camera.FieldOfView = _G.FOVValue
@@ -923,8 +1020,10 @@ return function(AccessKey)
             if _G.HJEnabled then task.spawn(function() hum:ChangeState(3); task.wait(0.4); hum:ChangeState(3) end) end
         end
 
-        if _G.FlickEnabled and amIHolder and isAlive(lockedTarget) and (root.Position - lockedTarget.Character.HumanoidRootPart.Position).Magnitude <= 4 then
-            Camera.CFrame *= CFrame.Angles(math.rad(math.random(-25, 25)), math.rad(math.random(-45, 45)), 0)
+        -- LOGIKA FLICK (Menggunakan slider kekuatan Flick)
+        if _G.FlickActive and amIHolder and isAlive(lockedTarget) and (root.Position - lockedTarget.Character.HumanoidRootPart.Position).Magnitude <= 4 then
+            local str = _G.FlickStrength or 45
+            Camera.CFrame *= CFrame.Angles(math.rad(math.random(-str/2, str/2)), math.rad(math.random(-str, str)), 0)
         end
 
         -- LOGIKA ROTASI DAN AUTO HOLD BOMB (Membelakangi Musuh Jika Memegang Bom, Menghadap Jika sisa 1 Detik)
@@ -978,15 +1077,23 @@ return function(AccessKey)
     end
     UserInputService:GetPropertyChangedSignal("MouseBehavior"):Connect(handleAutoJump)
 
-    -- LOGIKA JUMP REQUEST (Wallhop & Infinite Jump)
+    -- LOGIKA JUMP REQUEST (Wallhop & Multi-Jump Limit)
     UserInputService.JumpRequest:Connect(function()
         isSticking = false 
 
-        -- Infinite Jump Logic
+        -- Custom Multi-Jump Logic
         if _G.InfJumpEnabled then
             local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
             if hum then
-                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+                if hum.FloorMaterial == Enum.Material.Air then
+                    if _G.CurrentJumpCount < _G.MaxJumpCount - 1 then
+                        _G.CurrentJumpCount = _G.CurrentJumpCount + 1
+                        hum:ChangeState(Enum.HumanoidStateType.Jumping)
+                    end
+                else
+                    _G.CurrentJumpCount = 0
+                    hum:ChangeState(Enum.HumanoidStateType.Jumping)
+                end
             end
         end
 
@@ -1057,19 +1164,20 @@ return function(AccessKey)
     end)
 
     -- ========================================================
-    -- [[ 5. TOMBOL EKSTERNAL FREEZE (LAG) & AUTO HOLD BOMB ]]
+    -- [[ 5. TOMBOL EKSTERNAL FREEZE (LAG), FLICK, & AUTO HOLD BOMB ]]
     -- ========================================================
     
     -- TOMBOL FREEZE
     local FreezeExternalBtn = Instance.new("TextButton", ScreenGui)
     FreezeExternalBtn.Name = "FreezeExternalButton"
     FreezeExternalBtn.Size = UDim2.new(0, 70, 0, 30)
-    FreezeExternalBtn.Position = UDim2.new(0.5, -75, 0.8, 0)
+    FreezeExternalBtn.Position = UDim2.new(0.5, -115, 0.8, 0)
     FreezeExternalBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     FreezeExternalBtn.Text = "FREEZE"
     FreezeExternalBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     FreezeExternalBtn.Font = Enum.Font.GothamBold
     FreezeExternalBtn.TextSize = 11
+    FreezeExternalBtn.ZIndex = 100
     FreezeExternalBtn.Visible = false
     Instance.new("UICorner", FreezeExternalBtn).CornerRadius = UDim.new(0, 5)
     local FreezeStroke = Instance.new("UIStroke", FreezeExternalBtn)
@@ -1088,21 +1196,43 @@ return function(AccessKey)
     StopFreezeExternalBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     StopFreezeExternalBtn.Font = Enum.Font.GothamBold
     StopFreezeExternalBtn.TextSize = 9
+    StopFreezeExternalBtn.ZIndex = 100
     Instance.new("UICorner", StopFreezeExternalBtn).CornerRadius = UDim.new(0, 5)
     local StopFreezeStroke = Instance.new("UIStroke", StopFreezeExternalBtn)
     StopFreezeStroke.Color = Color3.fromRGB(255, 50, 50) 
     StopFreezeStroke.Thickness = 1.5
 
+    -- TOMBOL FLICK EKSTERNAL
+    local FlickExternalBtn = Instance.new("TextButton", ScreenGui)
+    FlickExternalBtn.Name = "FlickExternalButton"
+    FlickExternalBtn.Size = UDim2.new(0, 70, 0, 30)
+    FlickExternalBtn.Position = UDim2.new(0.5, -35, 0.8, 0)
+    FlickExternalBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    FlickExternalBtn.Text = "FLICK"
+    FlickExternalBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FlickExternalBtn.Font = Enum.Font.GothamBold
+    FlickExternalBtn.TextSize = 11
+    FlickExternalBtn.ZIndex = 100
+    FlickExternalBtn.Visible = false
+    Instance.new("UICorner", FlickExternalBtn).CornerRadius = UDim.new(0, 5)
+    local FlickExternalStroke = Instance.new("UIStroke", FlickExternalBtn)
+    FlickExternalStroke.Color = _G.AccentColor
+    FlickExternalStroke.Thickness = 1.5
+
+    FlickExternalUIScale = Instance.new("UIScale", FlickExternalBtn)
+    FlickExternalUIScale.Scale = 1.0
+
     -- TOMBOL AUTO HOLD BOMB
     local AutoHoldExternalBtn = Instance.new("TextButton", ScreenGui)
     AutoHoldExternalBtn.Name = "AutoHoldExternalButton"
     AutoHoldExternalBtn.Size = UDim2.new(0, 70, 0, 30)
-    AutoHoldExternalBtn.Position = UDim2.new(0.5, 5, 0.8, 0)
+    AutoHoldExternalBtn.Position = UDim2.new(0.5, 45, 0.8, 0)
     AutoHoldExternalBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     AutoHoldExternalBtn.Text = "HOLD BOMB"
     AutoHoldExternalBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     AutoHoldExternalBtn.Font = Enum.Font.GothamBold
     AutoHoldExternalBtn.TextSize = 10
+    AutoHoldExternalBtn.ZIndex = 100
     AutoHoldExternalBtn.Visible = false
     Instance.new("UICorner", AutoHoldExternalBtn).CornerRadius = UDim.new(0, 5)
     local AutoHoldStroke = Instance.new("UIStroke", AutoHoldExternalBtn)
@@ -1132,6 +1262,27 @@ return function(AccessKey)
     UserInputService.InputEnded:Connect(function(i) 
         if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then 
             fe_dragging = false 
+        end 
+    end)
+
+    -- Tombol Flick Draggable
+    local fl_dragging, fl_dragStart, fl_startPos
+    FlickExternalBtn.InputBegan:Connect(function(i) 
+        if (i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch) and not isLocked then 
+            fl_dragging = true
+            fl_dragStart = i.Position
+            fl_startPos = FlickExternalBtn.Position 
+        end 
+    end)
+    UserInputService.InputChanged:Connect(function(i) 
+        if fl_dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then 
+            local d = i.Position - fl_dragStart
+            FlickExternalBtn.Position = UDim2.new(fl_startPos.X.Scale, fl_startPos.X.Offset + d.X, fl_startPos.Y.Scale, fl_startPos.Y.Offset + d.Y) 
+        end 
+    end)
+    UserInputService.InputEnded:Connect(function(i) 
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then 
+            fl_dragging = false 
         end 
     end)
 
@@ -1201,6 +1352,18 @@ return function(AccessKey)
 
     StopFreezeExternalBtn.MouseButton1Click:Connect(stopFreeze)
 
+    -- Interaksi Tombol Eksternal Flick
+    FlickExternalBtn.MouseButton1Click:Connect(function()
+        _G.FlickActive = not _G.FlickActive
+        if _G.FlickActive then
+            FlickExternalBtn.Text = "FLICKING..."
+            FlickExternalBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+        else
+            FlickExternalBtn.Text = "FLICK"
+            FlickExternalBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        end
+    end)
+
     -- Interaksi Tombol Eksternal Auto Hold
     AutoHoldExternalBtn.MouseButton1Click:Connect(function()
         _G.AutoHoldActive = not _G.AutoHoldActive
@@ -1231,6 +1394,13 @@ return function(AccessKey)
         _G.FlickEnabled = not _G.FlickEnabled
         FlickBtn.Text = _G.FlickEnabled and "[Z] FLICK: ON" or "[Z] FLICK: OFF"
         FlickBtn.BackgroundColor3 = _G.FlickEnabled and _G.AccentColor or Color3.fromRGB(30, 30, 35) 
+        FlickExternalBtn.Visible = _G.FlickEnabled
+        
+        if not _G.FlickEnabled then
+            _G.FlickActive = false
+            FlickExternalBtn.Text = "FLICK"
+            FlickExternalBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        end
     end
 
     local function toggleHJ()
@@ -1374,5 +1544,5 @@ return function(AccessKey)
     UserInputService.InputChanged:Connect(function(i) if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then local d = i.Position - dragStart; MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y) end end)
     UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
 
-    print("Louis Hub VIP V13.5.2: Initialized Successfully with Auto Hold & Smart Face Timer.")
+    print("Louis Hub VIP V13.5.2: Initialized Successfully with Custom Flick & Multi-Jump limit.")
 end
