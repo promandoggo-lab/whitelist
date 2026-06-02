@@ -29,7 +29,7 @@ return function(AccessKey)
 
     -- [[ PROTEKSI 2: SELF-WHITELIST ]]
     local function Encr(t) local s = "" for _, v in pairs(t) do s = s .. string.char(v) end return s end
-    local WhitelistURL = Encr({104,116,116,112,115,58,47,47,114,97,119,46,103,105,116,104,117,98,117,115,101,114,99,111,110,116,101,110,116,46,99,111,109,47,110,97,122,117,109,105,114,117,105,53,45,111,115,115,47,119,104,105,116,101,108,105,115,116,47,114,101,102,115,47,104,101,97,100,115,47,109,97,105,110,47,119,104,116,101,108,105,115,116,46,108,117,97})
+    local WhitelistURL = Encr({104,116,116,112,115,58,47,47,114,97,119,46,103,105,116,104,117,98,117,115,101,114,99,111,110,116,101,110,116,46,99,111,109,47,110,97,122,117,109,105,114,117,105,53,45,111,115,115,47,119,104,105,116,101,108,105,115,116,47,114,101,102,115,47,104,101,97,100,115,47,109,97,105,110,47,119,104,105,116,101,108,105,115,116,46,108,117,97})
     
     local success, content = pcall(function() return game:HttpGet(WhitelistURL .. "?cache=" .. math.random(1,999)) end)
     local WhitelistData = success and loadstring(content)
@@ -372,14 +372,13 @@ return function(AccessKey)
     _G.CurrentCrosshairStyle = 1
     _G.CrosshairRotationSpeed = 110 -- Derajat per detik
 
+    -- SCREEN RESOLUTION (STRETCH RES) STATE
+    _G.ResolutionEnabled = false
+    _G.ResolutionValue = 1.00
+
     -- GLOBAL NILAI UKURAN (1-200)
     _G.UIScaleValue = 100
     _G.ExtScaleValue = 100
-
-    -- EXTRA AVATAR & RESOLUTION STATES
-    _G.ResolutionValue = 1.0
-    _G.KorbloxEnabled = false
-    _G.HeadlessEnabled = false
 
     local faceSpeed = 0.18
     local lockedTarget = nil 
@@ -401,49 +400,6 @@ return function(AccessKey)
     local isVisibleCached = false
     local isSticking = false
     local previewContainers = {} -- Menyimpan preview crosshair di menu untuk diputar
-
-    -- FUNCTIONS FOR KORBLOX & HEADLESS (VISUAL FE)
-    local function ApplyKorblox(char)
-        if not char then return end
-        pcall(function()
-            local isR15 = (char:FindFirstChild("Humanoid") and char.Humanoid.RigType == Enum.RigType.R15)
-            if isR15 then
-                local rightLegParts = {"RightLowerLeg", "RightUpperLeg", "RightFoot"}
-                for _, partName in ipairs(rightLegParts) do
-                    local p = char:FindFirstChild(partName)
-                    if p and p:IsA("BasePart") then
-                        p.Transparency = _G.KorbloxEnabled and 1 or 0
-                    end
-                end
-            else
-                local rl = char:FindFirstChild("Right Leg")
-                if rl and rl:IsA("BasePart") then
-                    rl.Transparency = _G.KorbloxEnabled and 1 or 0
-                end
-            end
-        end)
-    end
-
-    local function ApplyHeadless(char)
-        if not char then return end
-        pcall(function()
-            local head = char:FindFirstChild("Head")
-            if head and head:IsA("BasePart") then
-                head.Transparency = _G.HeadlessEnabled and 1 or 0
-                local face = head:FindFirstChildOfClass("Decal")
-                if face then
-                    face.Transparency = _G.HeadlessEnabled and 1 or 0
-                end
-            end
-        end)
-    end
-
-    LocalPlayer.CharacterAdded:Connect(function(char)
-        char:WaitForChild("Humanoid")
-        task.wait(0.5)
-        if _G.KorbloxEnabled then ApplyKorblox(char) end
-        if _G.HeadlessEnabled then ApplyHeadless(char) end
-    end)
 
     local function ApplyPotato()
         pcall(function()
@@ -666,14 +622,14 @@ return function(AccessKey)
         InfoFrame:TweenSize(UDim2.new(1, -12, 0, 0), "In", "Quad", 0.3, true, function() InfoFrame.Visible = false end)
     end)
 
-    -- MENGGUNAKAN SCROLLING FRAME UNTUK MENAMPUNG MENU (Canvas size disesuaikan agar muat menu baru)
+    -- MENGGUNAKAN SCROLLING FRAME UNTUK MENAMPUNG MENU (Canvas dilaras agar muat banyak fitur baru)
     local ContentFrame = Instance.new("ScrollingFrame", MainFrame)
     ContentFrame.Size = UDim2.new(1, 0, 1, -61)
     ContentFrame.Position = UDim2.new(0, 0, 0, 45)
     ContentFrame.BackgroundTransparency = 1
     ContentFrame.Visible = false
     ContentFrame.ScrollBarThickness = 0
-    ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 730) -- Dinaikkan dari 650 ke 730 agar muat menu Extra Visual & Resolution
+    ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 710) -- Disesuaikan dari 650 ke 710 agar pas setelah ditambahkan slider resolution
     
     local ModeBtn = createBtn("[E] MODE: CLASS", UDim2.new(0, 6, 0, 0), UDim2.new(0, 128, 0, 20)); ModeBtn.Parent = ContentFrame
     local FlickBtn = createBtn("[Z] FLICK: OFF", UDim2.new(0, 6, 0, 25), UDim2.new(0, 62, 0, 20)); FlickBtn.Parent = ContentFrame
@@ -807,7 +763,9 @@ return function(AccessKey)
     createLabel("FREEZE / LAG SIMULATOR", UDim2.new(0, 6, 0, 366)).Parent = ContentFrame
     local FreezeBtn = createBtn("[O] FREEZE BUTTON: OFF", UDim2.new(0, 6, 0, 378), UDim2.new(0, 128, 0, 20)); FreezeBtn.Parent = ContentFrame
 
+    -- ==========================================
     -- [[ DETIL PEMBUATAN 15 MODEL CROSSHAIR ]]
+    -- ==========================================
     local function buildCrosshair(container, styleId, m)
         container:ClearAllChildren()
         
@@ -1250,51 +1208,51 @@ return function(AccessKey)
         end)
     end
 
-    -- ========================================================
-    -- [[ 3.5. EXTRA VISUALS & RESOLUTION (NEW FEATURE) ]]
-    -- ========================================================
+    -- ==========================================
+    -- [[ 3.1. SCREEN RESOLUTION SYSTEM ]]
+    -- ==========================================
     createLine(UDim2.new(0, 6, 0, 575)).Parent = ContentFrame
-    createLabel("EXTRA VISUAL SETTINGS", UDim2.new(0, 6, 0, 581)).Parent = ContentFrame
+    createLabel("SCREEN RESOLUTION SYSTEM", UDim2.new(0, 6, 0, 581)).Parent = ContentFrame
+    local ResBtn = createBtn("[Y] RESOLUTION: OFF", UDim2.new(0, 6, 0, 593), UDim2.new(0, 128, 0, 20)); ResBtn.Parent = ContentFrame
 
-    createLabel("SCREEN RESOLUTION (0.1 - 2.0)", UDim2.new(0, 6, 0, 593)).Parent = ContentFrame
-    local ResolutionSliderFrame = Instance.new("Frame", ContentFrame)
-    ResolutionSliderFrame.Size = UDim2.new(0, 128, 0, 12)
-    ResolutionSliderFrame.Position = UDim2.new(0, 6, 0, 605)
-    ResolutionSliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-    Instance.new("UICorner", ResolutionSliderFrame)
+    local ResSliderFrame = Instance.new("Frame", ContentFrame)
+    ResSliderFrame.Size = UDim2.new(0, 128, 0, 12)
+    ResSliderFrame.Position = UDim2.new(0, 6, 0, 618)
+    ResSliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    Instance.new("UICorner", ResSliderFrame)
+    
+    local ResSliderFill = Instance.new("Frame", ResSliderFrame)
+    ResSliderFill.BackgroundColor3 = _G.AccentColor
+    Instance.new("UICorner", ResSliderFill)
+    
+    local ResSliderText = Instance.new("TextLabel", ResSliderFrame)
+    ResSliderText.Size = UDim2.new(1, 0, 1, 0)
+    ResSliderText.BackgroundTransparency = 1
+    ResSliderText.TextColor3 = Color3.new(1, 1, 1)
+    ResSliderText.TextSize = 7
+    ResSliderText.Font = Enum.Font.GothamBold
 
-    local ResolutionSliderFill = Instance.new("Frame", ResolutionSliderFrame)
-    ResolutionSliderFill.BackgroundColor3 = _G.AccentColor
-    Instance.new("UICorner", ResolutionSliderFill)
-
-    local ResolutionSliderText = Instance.new("TextLabel", ResolutionSliderFrame)
-    ResolutionSliderText.Size = UDim2.new(1, 0, 1, 0)
-    ResolutionSliderText.BackgroundTransparency = 1
-    ResolutionSliderText.TextColor3 = Color3.new(1, 1, 1)
-    ResolutionSliderText.TextSize = 7
-    ResolutionSliderText.Font = Enum.Font.GothamBold
-
-    local function syncResolutionSlider(val)
-        ResolutionSliderFill.Size = UDim2.new(math.clamp((val - 0.1) / 1.9, 0, 1), 0, 1, 0)
-        ResolutionSliderText.Text = string.format("RESOLUTION: %.2f", val)
+    local function syncResSlider(val)
+        ResSliderFill.Size = UDim2.new(math.clamp((val - 0.01) / 1.99, 0, 1), 0, 1, 0)
+        ResSliderText.Text = string.format("SCALE: %.2fx", val)
     end
-    syncResolutionSlider(_G.ResolutionValue)
+    syncResSlider(_G.ResolutionValue)
 
     local resDragging = false
-    ResolutionSliderFrame.InputBegan:Connect(function(input)
+    ResSliderFrame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             resDragging = true
-            local percentage = math.clamp((input.Position.X - ResolutionSliderFrame.AbsolutePosition.X) / ResolutionSliderFrame.AbsoluteSize.X, 0, 1)
-            _G.ResolutionValue = 0.1 + (percentage * 1.9)
-            syncResolutionSlider(_G.ResolutionValue)
+            local percentage = math.clamp((input.Position.X - ResSliderFrame.AbsolutePosition.X) / ResSliderFrame.AbsoluteSize.X, 0, 1)
+            _G.ResolutionValue = 0.01 + (percentage * 1.99)
+            syncResSlider(_G.ResolutionValue)
         end
     end)
 
     UserInputService.InputChanged:Connect(function(input)
         if resDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local percentage = math.clamp((input.Position.X - ResolutionSliderFrame.AbsolutePosition.X) / ResolutionSliderFrame.AbsoluteSize.X, 0, 1)
-            _G.ResolutionValue = 0.1 + (percentage * 1.9)
-            syncResolutionSlider(_G.ResolutionValue)
+            local percentage = math.clamp((input.Position.X - ResSliderFrame.AbsolutePosition.X) / ResSliderFrame.AbsoluteSize.X, 0, 1)
+            _G.ResolutionValue = 0.01 + (percentage * 1.99)
+            syncResSlider(_G.ResolutionValue)
         end
     end)
 
@@ -1304,37 +1262,14 @@ return function(AccessKey)
         end
     end)
 
-    local KorbloxBtn = createBtn("KORBLOX: OFF", UDim2.new(0, 6, 0, 625), UDim2.new(0, 62, 0, 20))
-    KorbloxBtn.Parent = ContentFrame
-    local HeadlessBtn = createBtn("HEADLESS: OFF", UDim2.new(0, 72, 0, 625), UDim2.new(0, 62, 0, 20))
-    HeadlessBtn.Parent = ContentFrame
+    -- SYSTEM SCALE SETTINGS (Posisi digeser ke bawah: 575 -> 635)
+    createLine(UDim2.new(0, 6, 0, 635)).Parent = ContentFrame
+    createLabel("SCALE SETTINGS", UDim2.new(0, 6, 0, 641)).Parent = ContentFrame
 
-    KorbloxBtn.MouseButton1Click:Connect(function()
-        _G.KorbloxEnabled = not _G.KorbloxEnabled
-        KorbloxBtn.Text = _G.KorbloxEnabled and "KORBLOX: ON" or "KORBLOX: OFF"
-        KorbloxBtn.BackgroundColor3 = _G.KorbloxEnabled and _G.AccentColor or Color3.fromRGB(30, 30, 35)
-        if LocalPlayer.Character then
-            ApplyKorblox(LocalPlayer.Character)
-        end
-    end)
-
-    HeadlessBtn.MouseButton1Click:Connect(function()
-        _G.HeadlessEnabled = not _G.HeadlessEnabled
-        HeadlessBtn.Text = _G.HeadlessEnabled and "HEADLESS: ON" or "HEADLESS: OFF"
-        HeadlessBtn.BackgroundColor3 = _G.HeadlessEnabled and _G.AccentColor or Color3.fromRGB(30, 30, 35)
-        if LocalPlayer.Character then
-            ApplyHeadless(LocalPlayer.Character)
-        end
-    end)
-
-    -- SYSTEM SCALE SETTINGS (Posisi digeser ke bawah: dari offset 575 menjadi 650)
-    createLine(UDim2.new(0, 6, 0, 650)).Parent = ContentFrame
-    createLabel("SCALE SETTINGS", UDim2.new(0, 6, 0, 656)).Parent = ContentFrame
-
-    -- SLIDER UKURAN UI (1-200%)
+    -- SLIDER UKURAN UI (1-200%) (Posisi digeser: 593 -> 653)
     local UIScaleSliderFrame = Instance.new("Frame", ContentFrame)
     UIScaleSliderFrame.Size = UDim2.new(0, 128, 0, 12)
-    UIScaleSliderFrame.Position = UDim2.new(0, 6, 0, 668)
+    UIScaleSliderFrame.Position = UDim2.new(0, 6, 0, 653)
     UIScaleSliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Instance.new("UICorner", UIScaleSliderFrame)
 
@@ -1380,10 +1315,10 @@ return function(AccessKey)
         end
     end)
 
-    -- SLIDER UKURAN TOMBOL EKSTERNAL (1-200%)
+    -- SLIDER UKURAN TOMBOL EKSTERNAL (1-200%) (Posisi digeser: 610 -> 670)
     local ExtScaleSliderFrame = Instance.new("Frame", ContentFrame)
     ExtScaleSliderFrame.Size = UDim2.new(0, 128, 0, 12)
-    ExtScaleSliderFrame.Position = UDim2.new(0, 6, 0, 685)
+    ExtScaleSliderFrame.Position = UDim2.new(0, 6, 0, 670)
     ExtScaleSliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Instance.new("UICorner", ExtScaleSliderFrame)
 
@@ -1784,13 +1719,10 @@ return function(AccessKey)
         end)
     end)
 
-    -- SYSTEM CAMERA RESOLUTION STRETCHER (RenderStepped Loop)
+    -- LOOP RENDER STEPPED KHUSUS UNTUK RESOLUTION (STRETCH RES) SYSTEM
     RunService.RenderStepped:Connect(function()
-        if _G.ResolutionValue and _G.ResolutionValue ~= 1.0 then
-            local CameraObj = workspace.CurrentCamera
-            if CameraObj then
-                CameraObj.CFrame = CameraObj.CFrame * CFrame.new(0, 0, 0, 1, 0, 0, 0, _G.ResolutionValue, 0, 0, 0, 1)
-            end
+        if _G.ResolutionEnabled and _G.ResolutionValue ~= 1.00 then
+            Camera.CFrame = Camera.CFrame * CFrame.new(0, 0, 0, 1, 0, 0, 0, _G.ResolutionValue, 0, 0, 0, 1)
         end
     end)
 
@@ -2127,6 +2059,12 @@ return function(AccessKey)
         end
     end
 
+    local function toggleResolution()
+        _G.ResolutionEnabled = not _G.ResolutionEnabled
+        ResBtn.Text = _G.ResolutionEnabled and "[Y] RESOLUTION: ON" or "[Y] RESOLUTION: OFF"
+        ResBtn.BackgroundColor3 = _G.ResolutionEnabled and _G.AccentColor or Color3.fromRGB(30, 30, 35)
+    end
+
     -- [[ BUTTON FUNCTIONALITIES ]]
     ToggleBtn.MouseButton1Click:Connect(toggleFollow)
     ModeBtn.MouseButton1Click:Connect(toggleMode)
@@ -2138,6 +2076,7 @@ return function(AccessKey)
     InfJumpBtn.MouseButton1Click:Connect(toggleInfJump)
     AutoHoldBtn.MouseButton1Click:Connect(toggleAutoHold)
     CrosshairBtn.MouseButton1Click:Connect(toggleCrosshair)
+    ResBtn.MouseButton1Click:Connect(toggleResolution)
     
     WHNormalBtn.MouseButton1Click:Connect(function() 
         _G.WHNormal = not _G.WHNormal
@@ -2191,6 +2130,7 @@ return function(AccessKey)
         elseif key == Enum.KeyCode.K then toggleInfJump()
         elseif key == Enum.KeyCode.J then toggleAutoHold()
         elseif key == Enum.KeyCode.U then toggleCrosshair()
+        elseif key == Enum.KeyCode.Y then toggleResolution()
         end
     end)
 
@@ -2200,5 +2140,5 @@ return function(AccessKey)
     UserInputService.InputChanged:Connect(function(i) if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then local d = i.Position - dragStart; MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y) end end)
     UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
 
-    print("Louis Hub VIP V13.5.2: Initialized Successfully with Custom Flick, Multi-Jump limit, Custom Crosshair System Bypass, Extra Visuals & Resolution Changer.")
+    print("Louis Hub VIP V13.5.2: Initialized Successfully with Custom Flick, Multi-Jump limit, Custom Crosshair System Bypass, Screen Resolution System & 15 Rotating Crosshairs.")
 end
