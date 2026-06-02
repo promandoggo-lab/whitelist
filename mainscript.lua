@@ -625,7 +625,7 @@ return function(AccessKey)
     ContentFrame.BackgroundTransparency = 1
     ContentFrame.Visible = false
     ContentFrame.ScrollBarThickness = 0
-    ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 780)
+    ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 650) -- Disesuaikan dari 780 ke 650 agar pas setelah jarak scale dirapatkan
     
     local ModeBtn = createBtn("[E] MODE: CLASS", UDim2.new(0, 6, 0, 0), UDim2.new(0, 128, 0, 20)); ModeBtn.Parent = ContentFrame
     local FlickBtn = createBtn("[Z] FLICK: OFF", UDim2.new(0, 6, 0, 25), UDim2.new(0, 62, 0, 20)); FlickBtn.Parent = ContentFrame
@@ -1204,14 +1204,14 @@ return function(AccessKey)
         end)
     end
 
-    -- SYSTEM SCALE SETTINGS
-    createLine(UDim2.new(0, 6, 0, 575 + 130)).Parent = ContentFrame
-    createLabel("SCALE SETTINGS", UDim2.new(0, 6, 0, 581 + 130)).Parent = ContentFrame
+    -- SYSTEM SCALE SETTINGS (Jarak dirapatkan di bawah menu Crosshair, offset +130 dihapus)
+    createLine(UDim2.new(0, 6, 0, 575)).Parent = ContentFrame
+    createLabel("SCALE SETTINGS", UDim2.new(0, 6, 0, 581)).Parent = ContentFrame
 
     -- SLIDER UKURAN UI (1-200%)
     local UIScaleSliderFrame = Instance.new("Frame", ContentFrame)
     UIScaleSliderFrame.Size = UDim2.new(0, 128, 0, 12)
-    UIScaleSliderFrame.Position = UDim2.new(0, 6, 0, 593 + 130)
+    UIScaleSliderFrame.Position = UDim2.new(0, 6, 0, 593)
     UIScaleSliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Instance.new("UICorner", UIScaleSliderFrame)
 
@@ -1260,7 +1260,7 @@ return function(AccessKey)
     -- SLIDER UKURAN TOMBOL EKSTERNAL (1-200%)
     local ExtScaleSliderFrame = Instance.new("Frame", ContentFrame)
     ExtScaleSliderFrame.Size = UDim2.new(0, 128, 0, 12)
-    ExtScaleSliderFrame.Position = UDim2.new(0, 6, 0, 610 + 130)
+    ExtScaleSliderFrame.Position = UDim2.new(0, 6, 0, 610)
     ExtScaleSliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Instance.new("UICorner", ExtScaleSliderFrame)
 
@@ -2069,3 +2069,4 @@ return function(AccessKey)
 
     print("Louis Hub VIP V13.5.2: Initialized Successfully with Custom Flick, Multi-Jump limit, Custom Crosshair System Bypass & 15 Rotating Crosshairs.")
 end
+
