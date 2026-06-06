@@ -23,6 +23,7 @@ return {
     [10512592607] = math.huge,
     [1375771009] = math.huge,
     [8140351299] = math.huge,
+    [9248606109] = math.huge,
 
     -- [[ VIP 1 BULAN ]]
     -- Format: [ID] = date(Tanggal, Bulan, TTahun
